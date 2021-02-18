@@ -1,5 +1,5 @@
 {
-  "pluginAlias": "ExampleHomebridgePlugin",
+  "pluginAlias": "Sunpower",
   "pluginType": "platform",
   "singular": true,
   "schema": {
@@ -9,7 +9,20 @@
         "title": "Name",
         "type": "string",
         "required": true,
-        "default": "Example Dynamic Platform"
+        "default": "Sunpower",
+        "description": "Plugin name as displayed in the Homebridge log"
+      },
+      "username": {
+        "title": "Username",
+        "type": "string",
+        "required": true,
+        "description": "Sunpower Username"
+      },
+      "password": {
+        "title": "Password",
+        "type": "string",
+        "required": true,
+        "description": "Sunpower Password"
       }
     }
   }
