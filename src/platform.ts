@@ -6,16 +6,10 @@ import { SunpowerDailyMixAccessory } from './humidityAccessory';
 
 import fetch from 'node-fetch';
 
-/**
- * HomebridgePlatform
- * This class is the main constructor for your plugin, this is where you should
- * parse the user config and discover/register accessories with Homebridge.
- */
 export class SunpowerPlatform implements DynamicPlatformPlugin {
   public readonly Service: typeof Service = this.api.hap.Service;
   public readonly Characteristic: typeof Characteristic = this.api.hap.Characteristic;
 
-  // this is used to track restored cached accessories
   public readonly accessories: PlatformAccessory[] = [];
 
   constructor(
@@ -25,44 +19,23 @@ export class SunpowerPlatform implements DynamicPlatformPlugin {
   ) {
     this.log.debug('Finished initializing platform:', this.config.name);
 
-    // When this event is fired it means Homebridge has restored all cached accessories from disk.
-    // Dynamic Platform plugins should only register new accessories after this event was fired,
-    // in order to ensure they weren't added to homebridge already. This event can also be used
-    // to start discovery of new accessories.
     this.api.on('didFinishLaunching', () => {
       log.debug('Executed didFinishLaunching callback');
-      // run the method to discover / register your devices as accessories
       this.discoverDevices();
     });
   }
 
-  /**
-   * This function is invoked when homebridge restores cached accessories from disk at startup.
-   * It should be used to setup event handlers for characteristics and update respective values.
-   */
   configureAccessory(accessory: PlatformAccessory) {
     this.log.info('Loading accessory from cache:', accessory.displayName);
-
-    // add the restored accessory to the accessories cache so we can track if it has already been registered
     this.accessories.push(accessory);
   }
 
-  /**
-   * This is an example method showing how to register discovered accessories.
-   * Accessories must only be registered once, previously created accessories
-   * must not be registered again to prevent "duplicate UUID" errors.
-   */
   discoverDevices() {
 
     const productionUUID = this.api.hap.uuid.generate('sunpower-production');
-    
     const existingProductionAccessory = this.accessories.find(accessory => accessory.UUID === productionUUID);
-    // if (existingProductionAccessory) {
-    //   this.api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [existingProductionAccessory]);
-    // }
     let productionAccessory: SunpowerLightAccessory;
     if (existingProductionAccessory) {
-      // productionAccessory = existingProductionAccessory;
       this.log.info('Restoring existing accessory from cache:', existingProductionAccessory.displayName);
       existingProductionAccessory.context.device = { name: 'Current Production' };
       this.api.updatePlatformAccessories([existingProductionAccessory]);
@@ -73,17 +46,13 @@ export class SunpowerPlatform implements DynamicPlatformPlugin {
       accessory.context.device = { name: 'Current Production' };
       productionAccessory = new SunpowerLightAccessory(this, accessory);
       this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
-      // productionAccessory = accessory;
     }
 
     const consumptionUUID = this.api.hap.uuid.generate('sunpower-consumption');
     const existingConsumptionAccessory = this.accessories.find(accessory => accessory.UUID === consumptionUUID);
-    // if (existingConsumptionAccessory) {
-    //   this.api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [existingConsumptionAccessory]);
-    // }
+
     let consumptionAccessory: SunpowerLightAccessory;
     if (existingConsumptionAccessory) {
-      // consumptionAccessory = existingConsumptionAccessory;
       this.log.info('Restoring existing accessory from cache:', existingConsumptionAccessory.displayName);
       existingConsumptionAccessory.context.device = { name: 'Current Consumption' };
       this.api.updatePlatformAccessories([existingConsumptionAccessory]);
@@ -94,14 +63,10 @@ export class SunpowerPlatform implements DynamicPlatformPlugin {
       accessory.context.device = { name: 'Current Consumption' };
       consumptionAccessory = new SunpowerLightAccessory(this, accessory);
       this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
-      // consumptionAccessory = accessory;
     }
 
     const dailyMixUUID = this.api.hap.uuid.generate('sunpower-dailymix');
     const existingDailyMixAccessory = this.accessories.find(accessory => accessory.UUID === dailyMixUUID);
-    // if (existingDailyMixAccessory) {
-    //   this.api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [existingDailyMixAccessory]);
-    // }
     let dailyMixAccessory: SunpowerDailyMixAccessory;
     if (existingDailyMixAccessory) {
       this.log.info('Restoring existing accessory from cache:', existingDailyMixAccessory.displayName);
