@@ -1,5 +1,5 @@
 {
-  "pluginAlias": "Homebridge Sunpower",
+  "pluginAlias": "Sunpower",
   "pluginType": "platform",
   "singular": true,
   "schema": {
