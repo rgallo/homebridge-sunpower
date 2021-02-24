@@ -40,22 +40,22 @@ export class SunpowerPlatform implements DynamicPlatformPlugin {
 
     const currentProductionDevice: SunpowerDevice = {
       id: 'sunpower-current-production',
-      name: 'Current Import',
+      name: 'Current Export',
       accessory: undefined,
     };
     const currentConsumptionDevice: SunpowerDevice = {
       id: 'sunpower-current-consumption',
-      name: 'Current Export',
+      name: 'Current Import',
       accessory: undefined,
     };
     const dailyProductionDevice: SunpowerDevice = {
       id: 'sunpower-daily-production',
-      name: 'Daily Import',
+      name: 'Daily Export',
       accessory: undefined,
     };
     const dailyConsumptionDevice: SunpowerDevice = {
       id: 'sunpower-daily-consumption',
-      name: 'Daily Export',
+      name: 'Daily Import',
       accessory: undefined,
     };
 
