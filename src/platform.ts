@@ -80,10 +80,10 @@ export class SunpowerPlatform implements DynamicPlatformPlugin {
 
     let token = '';
     let address = '';
-    let lastTokenDate = -1;
+    let lastTokenHour = -1;
     setInterval(async () => {
-      const today = new Date().getDate();
-      if (!token || lastTokenDate !== today) { // Refresh token daily
+      const today = new Date().getHours();
+      if (!token || lastTokenHour !== today) { // Refresh token hourly
         const loginData = { 'password': this.config.password, 'username': this.config.username, 'isPersistent': false };
         const authResponse = await fetch('https://elhapi.edp.sunpower.com/v1/elh/authenticate', {
           method: 'POST',
@@ -98,7 +98,7 @@ export class SunpowerPlatform implements DynamicPlatformPlugin {
         const authJson = await authResponse.json();
         token = authJson.tokenID;
         address = authJson.addresses[0]; // TODO multiple addresses?
-        lastTokenDate = today;
+        lastTokenHour = today;
       }
 
       const headers = {
