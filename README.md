@@ -8,7 +8,13 @@
 
 # homebridge-sunpower
 
-This is a big work-in-progress/proof of concept to get Sunpower production/consumption/daily mix info into Homebridge.  Production and consumption should show as light sensors with values in watts, and daily mix as a humidity sensor.  Everything is still up in the air for these decisions (especially the humidity sensor, as I'm pretty sure this won't work above 100%), and this is also my first time working with Homebridge, so feel free to contribute!
+This is a big work-in-progress/proof of concept to get Sunpower production/consumption/daily mix info into Homebridge.  
+
+This plugin has two sets of two lightbulbs. Current Import and Current Export will be switched on or off depending on if you are 
+net importing or exporting currently, the brightness represents the percentage of your import/export from/to the grid, 
+and the light sensor represents the power being generated, in kilowatts.  Daily Import/Export lightbulbs are similar but for the current day.
+
+Current design inspired by https://github.com/longzheng/homebridge-fronius-inverter-lights
 
 
 Example config:

@@ -2,7 +2,6 @@ import { API, DynamicPlatformPlugin, Logger, PlatformAccessory, PlatformConfig, 
 
 import { PLATFORM_NAME, PLUGIN_NAME } from './settings';
 import { SunpowerLightAccessory } from './lightAccessory';
-import { SunpowerDailyMixAccessory } from './humidityAccessory';
 
 import fetch from 'node-fetch';
 
@@ -32,103 +31,121 @@ export class SunpowerPlatform implements DynamicPlatformPlugin {
 
   discoverDevices() {
 
-    const productionUUID = this.api.hap.uuid.generate('sunpower-production');
-    const existingProductionAccessory = this.accessories.find(accessory => accessory.UUID === productionUUID);
-    let productionAccessory: SunpowerLightAccessory;
-    if (existingProductionAccessory) {
-      this.log.info('Restoring existing accessory from cache:', existingProductionAccessory.displayName);
-      existingProductionAccessory.context.device = { name: 'Current Production' };
-      this.api.updatePlatformAccessories([existingProductionAccessory]);
-      productionAccessory = new SunpowerLightAccessory(this, existingProductionAccessory);
-    } else {
-      this.log.info('Adding new accessory:', 'Sunpower Production');
-      const accessory = new this.api.platformAccessory('Sunpower Production', productionUUID);
-      accessory.context.device = { name: 'Current Production' };
-      productionAccessory = new SunpowerLightAccessory(this, accessory);
-      this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
+
+    interface SunpowerDevice {
+      id: string;
+      name: string;
+      accessory?: SunpowerLightAccessory;
     }
 
-    const consumptionUUID = this.api.hap.uuid.generate('sunpower-consumption');
-    const existingConsumptionAccessory = this.accessories.find(accessory => accessory.UUID === consumptionUUID);
+    const currentProductionDevice: SunpowerDevice = {
+      id: 'sunpower-current-production',
+      name: 'Current Import',
+      accessory: undefined,
+    };
+    const currentConsumptionDevice: SunpowerDevice = {
+      id: 'sunpower-current-consumption',
+      name: 'Current Export',
+      accessory: undefined,
+    };
+    const dailyProductionDevice: SunpowerDevice = {
+      id: 'sunpower-daily-production',
+      name: 'Daily Import',
+      accessory: undefined,
+    };
+    const dailyConsumptionDevice: SunpowerDevice = {
+      id: 'sunpower-daily-consumption',
+      name: 'Daily Export',
+      accessory: undefined,
+    };
 
-    let consumptionAccessory: SunpowerLightAccessory;
-    if (existingConsumptionAccessory) {
-      this.log.info('Restoring existing accessory from cache:', existingConsumptionAccessory.displayName);
-      existingConsumptionAccessory.context.device = { name: 'Current Consumption' };
-      this.api.updatePlatformAccessories([existingConsumptionAccessory]);
-      consumptionAccessory = new SunpowerLightAccessory(this, existingConsumptionAccessory);
-    } else {
-      this.log.info('Adding new accessory:', 'Sunpower Consumption');
-      const accessory = new this.api.platformAccessory('Sunpower Consumption', consumptionUUID);
-      accessory.context.device = { name: 'Current Consumption' };
-      consumptionAccessory = new SunpowerLightAccessory(this, accessory);
-      this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
-    }
+    const devices = [currentProductionDevice, currentConsumptionDevice, dailyProductionDevice, dailyConsumptionDevice];
 
-    const dailyMixUUID = this.api.hap.uuid.generate('sunpower-dailymix');
-    const existingDailyMixAccessory = this.accessories.find(accessory => accessory.UUID === dailyMixUUID);
-    let dailyMixAccessory: SunpowerDailyMixAccessory;
-    if (existingDailyMixAccessory) {
-      this.log.info('Restoring existing accessory from cache:', existingDailyMixAccessory.displayName);
-      existingDailyMixAccessory.context.device = { name: 'Daily Mix' };
-      this.api.updatePlatformAccessories([existingDailyMixAccessory]);
-      dailyMixAccessory = new SunpowerDailyMixAccessory(this, existingDailyMixAccessory);
-    } else {
-      this.log.info('Adding new accessory:', 'Sunpower Daily Mix');
-      const accessory = new this.api.platformAccessory('Sunpower Daily Mix', dailyMixUUID);
-      accessory.context.device = { name: 'Daily Mix' };
-      dailyMixAccessory = new SunpowerDailyMixAccessory(this, accessory);
-      this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
-    }
+    devices.forEach(device => {
+      const uuid = this.api.hap.uuid.generate(device.id);
+      const existingAccessory = this.accessories.find(accessory => accessory.UUID === uuid);
+      if (existingAccessory) {
+        this.log.info('Restoring existing accessory from cache:', existingAccessory.displayName);
+        existingAccessory.context.device = { name: device.name };
+        this.api.updatePlatformAccessories([existingAccessory]);
+        device.accessory = new SunpowerLightAccessory(this, existingAccessory);
+      } else {
+        this.log.info('Adding new accessory:', device.name);
+        const accessory = new this.api.platformAccessory(device.name, uuid);
+        accessory.context.device = { name: device.name };
+        device.accessory = new SunpowerLightAccessory(this, accessory);
+        this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
+      }
+    });
 
     let token = '';
     let address = '';
+    let lastTokenDate = -1;
     setInterval(async () => {
-      if (!token) {
+      const today = new Date().getDate();
+      if (!token || lastTokenDate !== today) { // Refresh token daily
         const loginData = { 'password': this.config.password, 'username': this.config.username, 'isPersistent': false };
         const authResponse = await fetch('https://elhapi.edp.sunpower.com/v1/elh/authenticate', {
           method: 'POST',
           body: JSON.stringify(loginData),
           headers:
-            {
-              'Content-Type': 'application/json',
-              'accept': 'application/json',
-              'User-Agent': 'Mozilla/1.22 (compatible; MSIE 2.0; Windows 3.1)',
-            },
+          {
+            'Content-Type': 'application/json',
+            'accept': 'application/json',
+            'User-Agent': 'Mozilla/1.22 (compatible; MSIE 2.0; Windows 3.1)',
+          },
         });
         const authJson = await authResponse.json();
         token = authJson.tokenID;
         address = authJson.addresses[0]; // TODO multiple addresses?
+        lastTokenDate = today;
       }
-  
+
       const headers = {
         'Content-Type': 'application/json',
         'accept': 'application/json',
         'User-Agent': 'Mozilla/1.22 (compatible; MSIE 2.0; Windows 3.1)',
         'Authorization': `SP-CUSTOM ${token}`,
       };
-  
+
       const currentResponse = await fetch(`https://elhapi.edp.sunpower.com/v1/elh/address/${address}/currentpower`, { headers });
       const currentJson = await currentResponse.json();
       const production = currentJson.data.production;
       const consumption = currentJson.data.consumption;
-  
-      productionAccessory.setValue(production);
-      consumptionAccessory.setValue(consumption);
-  
+      this.setBulbPairStatus(consumption, production, currentConsumptionDevice.accessory, currentProductionDevice.accessory);
       this.log.debug('Production:', production);
       this.log.debug('Consumption:', consumption);
-  
+
       const now = new Date();
       const formattedDate = `${now.getFullYear()}-${('0' + (now.getMonth() + 1)).slice(-2)}-${('0' + now.getDate()).slice(-2)}`;
-      const dailyMixResponse = await fetch(`https://elhapi.edp.sunpower.com/v2/elh/address/${address}/power?` +
+      const dailyResponse = await fetch(`https://elhapi.edp.sunpower.com/v2/elh/address/${address}/power?` +
         `endtime=${formattedDate}T23:59:59&starttime=${formattedDate}T00:00:00`, { headers });
-      const dailyMixJson = await dailyMixResponse.json();
-      const powerData = dailyMixJson.powerData;
-      const solarEnergy = powerData.map(e => parseFloat(e.split(',')[1] || 0.0)).reduce((a, b) => a + b, 0.0);
-      const totalEnergy = powerData.map(e => parseFloat(e.split(',')[2] || 0.0)).reduce((a, b) => a + b, 0.0);
-      dailyMixAccessory.setValue(solarEnergy/totalEnergy);
-      this.log.debug('Daily Mix:', (solarEnergy/totalEnergy)*100);
+      const dailyJson = await dailyResponse.json();
+      const powerData = dailyJson.powerData;
+      const dailyProduction = powerData.map((e: string) => parseFloat(e.split(',')[1] || '0.0')).reduce((a, b) => a + b, 0.0);
+      const dailyConsumption = powerData.map((e: string) => parseFloat(e.split(',')[2] || '0.0')).reduce((a, b) => a + b, 0.0);
+      this.setBulbPairStatus(dailyConsumption, dailyProduction, dailyConsumptionDevice.accessory, dailyProductionDevice.accessory);
+      this.log.debug('Daily Production:', dailyProduction);
+      this.log.debug('Daily Consumption:', dailyConsumption);
     }, 30000);
+  }
+
+  setBulbPairStatus(consumption: number, production: number, importAccessory?: SunpowerLightAccessory, 
+    exportAccessory?: SunpowerLightAccessory) {
+    let pctExport: number, pctImport: number;
+    if (consumption > production) {
+      pctExport = 0.0;
+      pctImport = Math.round(((consumption - production) / consumption) * 100.0);
+    } else if (production > consumption) {
+      pctImport = 0.0;
+      pctExport = Math.round(((production - consumption) / production) * 100.0);
+    } else {
+      pctExport = 0.0;
+      pctImport = 0.0;
+    }
+    this.log.debug('importAccessory', consumption >= production, pctImport, consumption);
+    this.log.debug('exportAccessory', production >= consumption, pctExport, production);
+    importAccessory?.setStatus(consumption >= production, pctImport, consumption);
+    exportAccessory?.setStatus(production >= consumption, pctExport, production);
   }
 }

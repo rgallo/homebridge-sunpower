@@ -1,7 +1,7 @@
 {
   "displayName": "Homebridge Sunpower",
   "name": "homebridge-sunpower",
-  "version": "0.0.2",
+  "version": "0.1.0",
   "description": "Adds monitoring of Sunpower solar panels to Homebridge",
   "license": "Apache-2.0",
   "repository": {

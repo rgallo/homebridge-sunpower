@@ -4,7 +4,8 @@ import { SunpowerPlatform } from './platform';
 
 
 export class SunpowerLightAccessory {
-  private service: Service;
+  private lightbulbService: Service;
+  private lightSensorService: Service;
 
   constructor(
     private readonly platform: SunpowerPlatform,
@@ -14,13 +15,18 @@ export class SunpowerLightAccessory {
       .setCharacteristic(this.platform.Characteristic.Manufacturer, 'Sunpower')
       .setCharacteristic(this.platform.Characteristic.Model, 'psv6'); 
 
-    this.service = this.accessory.getService(accessory.context.device.name) ||
-      this.accessory.addService(this.platform.Service.LightSensor, accessory.context.device.name);
+    this.lightbulbService = this.accessory.getService(this.platform.Service.Lightbulb) ||
+      this.accessory.addService(this.platform.Service.Lightbulb, this.platform.Service.Lightbulb);
+
+    this.lightSensorService = this.accessory.getService(this.platform.Service.LightSensor) ||
+      this.accessory.addService(this.platform.Service.LightSensor, this.platform.Service.LightSensor);
 
   }
 
-  public setValue(value: number) {
-    this.service.updateCharacteristic(this.platform.Characteristic.CurrentAmbientLightLevel, value*1000.0);
+  public setStatus(isOn: boolean, brightness: number, lux: number) {
+    this.lightbulbService.updateCharacteristic(this.platform.Characteristic.On, isOn);
+    this.lightbulbService.updateCharacteristic(this.platform.Characteristic.Brightness, brightness);
+    this.lightSensorService.updateCharacteristic(this.platform.Characteristic.CurrentAmbientLightLevel, lux);
   }
 
 }
