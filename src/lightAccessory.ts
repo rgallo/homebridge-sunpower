@@ -26,7 +26,7 @@ export class SunpowerLightAccessory {
   public setStatus(isOn: boolean, brightness: number, lux: number) {
     this.lightbulbService.updateCharacteristic(this.platform.Characteristic.On, isOn);
     this.lightbulbService.updateCharacteristic(this.platform.Characteristic.Brightness, brightness);
-    this.lightSensorService.updateCharacteristic(this.platform.Characteristic.CurrentAmbientLightLevel, lux);
+    this.lightSensorService.updateCharacteristic(this.platform.Characteristic.CurrentAmbientLightLevel, Math.max(lux, 0.0001));
   }
 
 }
