@@ -1,3 +1,6 @@
+## Note: This project does not work with the newest Sunpower API.  It will be updated as soon as the new API is worked out.
+### Further details in this issue: https://github.com/rgallo/homebridge-sunpower/issues/8#issuecomment-1169086134
+
 
 <p align="center">
 
